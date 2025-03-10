@@ -105,14 +105,10 @@ public class CountManager {
     public void handle(String playerName) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             String key = getKey(playerName);
-            
-            if (!redisManager.existsKey(key)) {
-                redisManager.setValue(key, "0");
-            }
-
-            long count = incrementCount(playerName);
+            long count = redisManager.incrementAndGet(key);
+            redisManager.publish(COUNT_CHANNEL, playerName + ":" + count);
             if (count >= maxCount) {
-                redisManager.deleteKey(getKey(playerName));
+                redisManager.deleteKey(key);
             }
         });
     }
@@ -128,18 +124,6 @@ public class CountManager {
                             .replace("%maxcount%", String.valueOf(maxCount));
             player.sendMessage(notifyMessage);
         });
-    }
-
-    /**
-     * Increment the count of a player
-     * @param playerName The name of the player
-     * @return The new count of the player
-     */
-    private long incrementCount(String playerName) {
-        String key = getKey(playerName);
-        long count = redisManager.incrementAndGet(key);
-        redisManager.publish(COUNT_CHANNEL, playerName + ":" + count);
-        return count;
     }
 
     /**

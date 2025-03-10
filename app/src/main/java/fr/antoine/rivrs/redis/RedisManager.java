@@ -126,19 +126,6 @@ public class RedisManager {
     }
 
     /**
-     * Sets the value of a key in Redis
-     * @param key The key to set
-     * @param value The value to set
-     */
-    public void setValue(String key, String value) {
-        try (Jedis jedis = jedisPool.getResource()) {
-            jedis.set(key, value);
-        } catch (Exception exception) {
-            plugin.getLogger().severe("Error in Redis set: " + exception.getMessage());
-        }
-    }
-
-    /**
      * Gets the value of a key in Redis
      * @param key The key to get
      * @return The value of the key
