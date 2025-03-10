@@ -1,0 +1,10 @@
+redis:
+  host: localhost
+  port: 6379
+
+messages:
+  COUNT_WIN: "<red>Player %player% just finished!</red>"
+  COUNT_NOTIFY: "<red>Progression: %count%/%maxcount%</red>"
+
+max-count: 10
+  

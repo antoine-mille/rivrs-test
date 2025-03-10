@@ -1,0 +1,17 @@
+# Ignore Gradle project-specific cache directory
+.gradle
+
+# Ignore Gradle build output directory
+build
+
+# Ignore VSCode settings
+.vscode
+
+# Ignore IntelliJ IDEA settings
+.idea
+
+# Ignore Eclipse settings
+.eclipse
+
+# Ignore macOS metadata
+.DS_Store

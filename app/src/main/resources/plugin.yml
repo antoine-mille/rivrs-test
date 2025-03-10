@@ -1,0 +1,11 @@
+main: fr.antoine.rivrs.Main
+name: Rivrs-Test
+version: 1.0.0
+description: A test plugin for Rivrs
+author: Antoine
+api: 1.21.4-R0.1-SNAPSHOT
+commands:
+  count:
+    description: Count the number of times a player has been counted
+    usage: /count <playerName>
+    aliases: [c]
