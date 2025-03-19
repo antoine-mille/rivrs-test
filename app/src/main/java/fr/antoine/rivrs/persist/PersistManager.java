@@ -69,4 +69,13 @@ public class PersistManager {
         }
     }
 
+    /**
+     * Closes the data source and releases all connections
+     */
+    public void closeDataSource() {
+        if (dataSource != null && !dataSource.isClosed()) {
+            dataSource.close();
+        }
+    }
+
 }

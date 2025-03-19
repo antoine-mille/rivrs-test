@@ -1,13 +1,11 @@
 package fr.antoine.rivrs;
 
-import fr.antoine.rivrs.dao.PlayerCountDao;
-import fr.antoine.rivrs.persist.PersistManager;
-import org.bukkit.Bukkit;
-import org.bukkit.plugin.java.JavaPlugin;
-
 import fr.antoine.rivrs.commands.CountCommand;
+import fr.antoine.rivrs.dao.PlayerCountDao;
 import fr.antoine.rivrs.managers.CountManager;
+import fr.antoine.rivrs.persist.PersistManager;
 import fr.antoine.rivrs.redis.RedisManager;
+import org.bukkit.plugin.java.JavaPlugin;
 
 import java.util.logging.Level;
 
@@ -49,6 +47,7 @@ public class Main extends JavaPlugin {
     @Override
     public void onDisable() {
         redisManager.closePool();
+        persistManager.closeDataSource();
         log("Rivrs has been disabled!", Level.INFO);
     }
 

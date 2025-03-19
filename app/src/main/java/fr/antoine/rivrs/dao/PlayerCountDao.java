@@ -7,8 +7,12 @@ import fr.antoine.rivrs.redis.RedisManager;
 import java.util.Optional;
 import java.util.logging.Level;
 
+/**
+ * Data access object for player counts in the database and cache
+ */
 public class PlayerCountDao {
 
+    // The channel for player counts in the cache
     private static final String COUNT_CHANNEL = "count";
 
     private final Main plugin;
