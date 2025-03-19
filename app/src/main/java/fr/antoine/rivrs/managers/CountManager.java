@@ -1,5 +1,6 @@
 package fr.antoine.rivrs.managers;
 
+import net.kyori.adventure.text.Component;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
@@ -16,7 +17,7 @@ import fr.antoine.rivrs.utils.Colorize;
  * Manager for counting player interactions
  */
 public class CountManager {
-    
+
     private static final String COUNT_CHANNEL = "count";
     private static final String DEFAULT_COUNT_WIN_MESSAGE = "<red>Player %player% just finished!</red>";
     private static final String DEFAULT_COUNT_NOTIFY_MESSAGE = "<red>Progression: %count%/%maxcount%</red>";
@@ -29,7 +30,8 @@ public class CountManager {
 
     /**
      * Constructor for the CountManager class
-     * @param plugin The main plugin instance
+     *
+     * @param plugin       The main plugin instance
      * @param redisManager The RedisManager instance
      */
     public CountManager(Main plugin, RedisManager redisManager) {
@@ -43,7 +45,8 @@ public class CountManager {
 
     /**
      * Retrieves an integer from the configuration
-     * @param path The path to the configuration value
+     *
+     * @param path         The path to the configuration value
      * @param defaultValue The default value if the path is not found
      * @return The integer value from the configuration
      */
@@ -53,7 +56,8 @@ public class CountManager {
 
     /**
      * Retrieves a message from the configuration and colorizes it
-     * @param path The path to the message
+     *
+     * @param path         The path to the message
      * @param defaultValue The default message if the path is not found
      * @return The colorized message
      */
@@ -62,30 +66,30 @@ public class CountManager {
         if (messages == null) {
             throw new IllegalArgumentException("messages section not found in config.yml");
         }
-        return Colorize.colorize(messages.getString(path, defaultValue));
+        return messages.getString(path, defaultValue);
     }
 
     /**
      * Subscribes to the count channel
      */
     private void subscribe() {
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            redisManager.subscribe((channel, value) -> {
-                String[] data = value.split(":");
-                String playerName = data[0];
-                long count = Long.parseLong(data[1]);
-                if (count >= maxCount) {
-                    plugin.getServer().getOnlinePlayers().forEach(player -> {
-                        spawnFirework(player.getLocation());
-                        player.sendMessage(countWinMessage.replace("%player%", playerName));
-                    });
-                }
-            }, COUNT_CHANNEL);
-        });
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> redisManager.subscribe((channel, value) -> {
+            String[] data = value.split(":");
+            String playerName = data[0];
+            long count = Long.parseLong(data[1]);
+            if (count >= maxCount) {
+                plugin.getServer().getOnlinePlayers().forEach(player -> {
+                    spawnFirework(player.getLocation());
+                    Component parsed = Colorize.colorize(countWinMessage.replace("%player%", playerName));
+                    player.sendMessage(parsed);
+                });
+            }
+        }, COUNT_CHANNEL));
     }
 
     /**
      * Spawns a firework at a location
+     *
      * @param location The location to spawn the firework at
      */
     private void spawnFirework(Location location) {
@@ -93,13 +97,21 @@ public class CountManager {
             Firework firework = (Firework) location.getWorld().spawnEntity(location, EntityType.FIREWORK_ROCKET);
             FireworkMeta meta = firework.getFireworkMeta();
             meta.setPower(2);
-            meta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.RED).withFade(Color.GREEN).build());
+            meta.addEffect(
+                    FireworkEffect
+                            .builder()
+                            .with(FireworkEffect.Type.STAR)
+                            .withColor(Color.RED)
+                            .withFade(Color.GREEN)
+                            .build()
+            );
             firework.setFireworkMeta(meta);
         });
     }
 
     /**
      * Handles the counting of a player
+     *
      * @param playerName The name of the player
      */
     public void handle(String playerName) {
@@ -119,15 +131,15 @@ public class CountManager {
     public void notifyPlayers() {
         plugin.getServer().getOnlinePlayers().forEach(player -> {
             String count = redisManager.getValue(getKey(player.getName()));
-            String notifyMessage = countNotifyMessage
-                            .replace("%count%", count == null ? "0" : count)
-                            .replace("%maxcount%", String.valueOf(maxCount));
-            player.sendMessage(notifyMessage);
+            String notifyMessage = countNotifyMessage.replace("%count%", count == null ? "0" : count).replace("%maxcount%", String.valueOf(maxCount));
+            Component parsed = Colorize.colorize(notifyMessage);
+            player.sendMessage(parsed);
         });
     }
 
     /**
      * Get the key for the count of a player
+     *
      * @param playerName The name of the player
      * @return The key for the count of the player
      */

@@ -6,7 +6,8 @@ package fr.antoine.rivrs.redis;
 @FunctionalInterface
 public interface MessageHandler {
     /**
-     * Handles a message received from Redis  
+     * Handles a message received from Redis
+     *
      * @param channel The channel the message was received from
      * @param message The message received
      */

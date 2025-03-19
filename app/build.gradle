@@ -23,6 +23,7 @@ repositories {
 dependencies {
     compileOnly 'io.papermc.paper:paper-api:1.21.4-R0.1-SNAPSHOT'
     implementation group: 'redis.clients', name: 'jedis', version: '5.2.0'
+    implementation "net.kyori:adventure-api:4.19.0"
 }
 
 // Apply a specific Java toolchain to ease working on different environments.

@@ -10,20 +10,21 @@ import fr.antoine.rivrs.Main;
  * Manages the Redis connection and provides methods for subscribing to channels and publishing messages
  */
 public class RedisManager {
-    
+
     private final Main plugin;
 
     private JedisPool jedisPool;
-    
+
     /**
-     * Constructor for the RedisManager class   
+     * Constructor for the RedisManager class
+     *
      * @param plugin The main plugin instance
      */
     public RedisManager(Main plugin) {
         this.plugin = plugin;
         setupRedisConnection();
     }
-    
+
     /**
      * Setup the Redis connection
      */
@@ -33,36 +34,36 @@ public class RedisManager {
         if (config == null) {
             throw new IllegalArgumentException("No redis config found in config.yml!");
         }
-        
+
         String host = config.getString("host", "localhost");
         int port = config.getInt("port", 6379);
         String password = config.getString("password", "");
         int database = config.getInt("database", 0);
         int timeout = config.getInt("timeout", 2000);
-        
+
         try {
             JedisPoolConfig poolConfig = new JedisPoolConfig();
             poolConfig.setMaxTotal(128);
             poolConfig.setMaxIdle(64);
             poolConfig.setMinIdle(16);
 
-            if (password != null && !password.isEmpty()) {
+            if (!password.isEmpty()) {
                 jedisPool = new JedisPool(poolConfig, host, port, timeout, password, database);
             } else {
                 jedisPool = new JedisPool(poolConfig, host, port, timeout);
             }
-            
+
             plugin.getLogger().info("Redis connection successfully established.");
         } catch (Exception exception) {
             plugin.getLogger().severe("Error connecting to Redis: " + exception.getMessage());
         }
     }
-    
+
     /**
      * Subscribe to multiple channels and execute an action for each received message
-     * 
+     *
      * @param messageHandler The action to execute when a message is received
-     * @param channels The channels to subscribe to
+     * @param channels       The channels to subscribe to
      */
     public void subscribe(MessageHandler messageHandler, String... channels) {
         try (Jedis jedis = jedisPool.getResource()) {
@@ -74,6 +75,7 @@ public class RedisManager {
 
     /**
      * Publishes a message to a Redis channel
+     *
      * @param channel The channel to publish the message to
      * @param message The message to publish
      */
@@ -84,9 +86,10 @@ public class RedisManager {
             plugin.getLogger().severe("Error in Redis publication: " + exception.getMessage());
         }
     }
-    
+
     /**
      * Increments the value of a key in Redis and returns the new value
+     *
      * @param key The key to increment
      * @return The new value of the key
      */
@@ -101,6 +104,7 @@ public class RedisManager {
 
     /**
      * Checks if a key exists in Redis
+     *
      * @param key The key to check
      * @return True if the key exists, false otherwise
      */
@@ -115,6 +119,7 @@ public class RedisManager {
 
     /**
      * Deletes a key from Redis
+     *
      * @param key The key to delete
      */
     public void deleteKey(String key) {
@@ -127,6 +132,7 @@ public class RedisManager {
 
     /**
      * Gets the value of a key in Redis
+     *
      * @param key The key to get
      * @return The value of the key
      */
