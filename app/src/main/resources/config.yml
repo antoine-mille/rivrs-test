@@ -2,9 +2,14 @@ redis:
   host: localhost
   port: 6379
 
+database:
+  url: "jdbc:mariadb://localhost:3306/database"
+  username: "root"
+  password: "password"
+
 messages:
-  COUNT_WIN: "<red>Player %player% just finished!</red>"
-  COUNT_NOTIFY: "<red>Progression: %count%/%maxcount%</red>"
+  COUNT_WIN: "<red>Player %player% just finished!"
+  COUNT_NOTIFY: "<red>Progression: %count%/%maxcount%"
 
 max-count: 10
   

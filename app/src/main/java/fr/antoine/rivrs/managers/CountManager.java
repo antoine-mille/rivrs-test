@@ -1,6 +1,10 @@
 package fr.antoine.rivrs.managers;
 
-import net.kyori.adventure.text.Component;
+import fr.antoine.rivrs.Main;
+import fr.antoine.rivrs.dao.PlayerCountDao;
+import fr.antoine.rivrs.redis.RedisManager;
+import fr.antoine.rivrs.utils.Colorize;
+import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Location;
@@ -8,10 +12,6 @@ import org.bukkit.configuration.ConfigurationSection;
 import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
 import org.bukkit.inventory.meta.FireworkMeta;
-
-import fr.antoine.rivrs.Main;
-import fr.antoine.rivrs.redis.RedisManager;
-import fr.antoine.rivrs.utils.Colorize;
 
 /**
  * Manager for counting player interactions
@@ -24,34 +24,35 @@ public class CountManager {
 
     private final Main plugin;
     private final RedisManager redisManager;
-    private final int maxCount;
-    private final String countWinMessage;
-    private final String countNotifyMessage;
+    private final PlayerCountDao playerCountDao;
+
+    private int maxCount;
+    private String countWinMessage;
+    private String countNotifyMessage;
 
     /**
      * Constructor for the CountManager class
      *
-     * @param plugin       The main plugin instance
-     * @param redisManager The RedisManager instance
+     * @param plugin The main plugin instance
      */
-    public CountManager(Main plugin, RedisManager redisManager) {
+    public CountManager(Main plugin) {
         this.plugin = plugin;
-        this.redisManager = redisManager;
-        this.maxCount = getConfigInt("max-count", 10);
-        this.countWinMessage = getConfigMessage("COUNT_WIN", DEFAULT_COUNT_WIN_MESSAGE);
-        this.countNotifyMessage = getConfigMessage("COUNT_NOTIFY", DEFAULT_COUNT_NOTIFY_MESSAGE);
+        this.redisManager = plugin.getRedisManager();
+        this.playerCountDao = plugin.getPlayerCountDao();
+
+        initialize();
         subscribe();
+
+        Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, this::notifyPlayers, 0, 20);
     }
 
     /**
-     * Retrieves an integer from the configuration
-     *
-     * @param path         The path to the configuration value
-     * @param defaultValue The default value if the path is not found
-     * @return The integer value from the configuration
+     * Initializes the count manager
      */
-    private int getConfigInt(String path, int defaultValue) {
-        return plugin.getConfig().getInt(path, defaultValue);
+    private void initialize() {
+        this.maxCount = plugin.getConfig().getInt("max-count", 10);
+        this.countWinMessage = getConfigMessage("COUNT_WIN", DEFAULT_COUNT_WIN_MESSAGE);
+        this.countNotifyMessage = getConfigMessage("COUNT_NOTIFY", DEFAULT_COUNT_NOTIFY_MESSAGE);
     }
 
     /**
@@ -74,13 +75,13 @@ public class CountManager {
      */
     private void subscribe() {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> redisManager.subscribe((channel, value) -> {
-            String[] data = value.split(":");
-            String playerName = data[0];
-            long count = Long.parseLong(data[1]);
+            var data = value.split(":");
+            var playerName = data[0];
+            var count = Long.parseLong(data[1]);
             if (count >= maxCount) {
                 plugin.getServer().getOnlinePlayers().forEach(player -> {
                     spawnFirework(player.getLocation());
-                    Component parsed = Colorize.colorize(countWinMessage.replace("%player%", playerName));
+                    var parsed = Colorize.colorize(countWinMessage.replace("%player%", playerName));
                     player.sendMessage(parsed);
                 });
             }
@@ -97,14 +98,7 @@ public class CountManager {
             Firework firework = (Firework) location.getWorld().spawnEntity(location, EntityType.FIREWORK_ROCKET);
             FireworkMeta meta = firework.getFireworkMeta();
             meta.setPower(2);
-            meta.addEffect(
-                    FireworkEffect
-                            .builder()
-                            .with(FireworkEffect.Type.STAR)
-                            .withColor(Color.RED)
-                            .withFade(Color.GREEN)
-                            .build()
-            );
+            meta.addEffect(FireworkEffect.builder().with(FireworkEffect.Type.STAR).withColor(Color.RED).withFade(Color.GREEN).build());
             firework.setFireworkMeta(meta);
         });
     }
@@ -116,11 +110,11 @@ public class CountManager {
      */
     public void handle(String playerName) {
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            String key = getKey(playerName);
-            long count = redisManager.incrementAndGet(key);
+            var count = playerCountDao.getPlayerCount(playerName).orElse(0L) + 1;
+            playerCountDao.upsertPlayerCount(playerName, count);
             redisManager.publish(COUNT_CHANNEL, playerName + ":" + count);
             if (count >= maxCount) {
-                redisManager.deleteKey(key);
+                playerCountDao.deletePlayerCount(playerName);
             }
         });
     }
@@ -128,22 +122,11 @@ public class CountManager {
     /**
      * Notifies all players of the current count
      */
-    public void notifyPlayers() {
+    private void notifyPlayers() {
         plugin.getServer().getOnlinePlayers().forEach(player -> {
-            String count = redisManager.getValue(getKey(player.getName()));
-            String notifyMessage = countNotifyMessage.replace("%count%", count == null ? "0" : count).replace("%maxcount%", String.valueOf(maxCount));
-            Component parsed = Colorize.colorize(notifyMessage);
+            var count = playerCountDao.getPlayerCount(player.getName()).map(String::valueOf).orElse("0");
+            var parsed = Colorize.colorize(countNotifyMessage.replace("%count%", count).replace("%maxcount%", String.valueOf(maxCount)));
             player.sendMessage(parsed);
         });
-    }
-
-    /**
-     * Get the key for the count of a player
-     *
-     * @param playerName The name of the player
-     * @return The key for the count of the player
-     */
-    private String getKey(String playerName) {
-        return COUNT_CHANNEL + ":" + playerName;
     }
 }

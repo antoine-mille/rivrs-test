@@ -39,8 +39,7 @@ public class CountCommand implements CommandExecutor {
             sender.sendMessage("§cUsage: /count <playerName>");
             return true;
         }
-        String playerName = args[0];
-        countManager.handle(playerName);
+        countManager.handle(args[0]);
         return true;
     }
 } 

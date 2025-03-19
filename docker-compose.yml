@@ -4,9 +4,13 @@ services:
     restart: always
     ports:
       - "6379:6379"
-    volumes:
-      - cache:/data
 
-volumes:
-  cache:
-    driver: local
+  mariadb:
+    image: mariadb:10.5
+    restart: always
+    environment:
+      MARIADB_ROOT_PASSWORD: password
+      MARIADB_DATABASE: database
+      MARIADB_USER: user
+    ports:
+      - "3306:3306"
